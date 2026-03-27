@@ -1,0 +1,16 @@
+{
+  "root": true,
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint"],
+  "extends": ["plugin:@typescript-eslint/recommended"],
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "rules": {
+    "no-console": "off",
+    "import/extensions": "off",
+    "arrow-body-style": "off",
+    "@typescript-eslint/no-explicit-any": "warn"
+  }
+}
