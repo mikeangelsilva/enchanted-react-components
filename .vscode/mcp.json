@@ -1,0 +1,9 @@
+{
+  "servers": {
+    "enchanted-react-components": {
+      "type": "stdio",
+      "command": "npx",
+      "args": ["tsx", "mcp-server/index.ts"]
+    }
+  }
+}

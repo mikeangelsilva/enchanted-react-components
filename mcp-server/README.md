@@ -20,7 +20,7 @@ Ask your AI assistant questions like:
   - [Cursor](#cursor)
 - [Tools Reference](#tools-reference)
 - [Prompts Reference](#prompts-reference)
-- [Updating Metadata](#updating-metadata)
+- [`metadata.json`](#metadatajson)
 - [Project Structure](#project-structure)
 
 ---
@@ -106,7 +106,7 @@ Add to your VS Code `settings.json` (or workspace `.vscode/mcp.json`):
 }
 ```
 
-Alternatively, the root-level `mcp.json` in this repo is pre-configured — open it in VS Code and click **Start** in the MCP panel.
+Alternatively, the workspace-level `.vscode/mcp.json` in this repo is pre-configured — open the project in VS Code and the server will appear in the MCP panel.
 
 ### Cursor
 
@@ -282,18 +282,86 @@ Generates step-by-step integration instructions.
 
 ---
 
-## Updating Metadata
+## `metadata.json`
 
-The `metadata.json` file contains pre-extracted component props, enums, categories, and the icon index. It is read-only at runtime.
+`metadata.json` is a pre-built index (~12,000 lines) that the MCP server reads at runtime. It is committed to the repo so the server works out of the box — no build step required.
 
-Regenerate it after library updates:
+### Structure
+
+```jsonc
+{
+  "version": "2.4.0",           // library version at generation time
+  "generatedAt": "...",          // ISO timestamp
+  "components": {                // 57 components keyed by name
+    "Button": {
+      "name": "Button",
+      "category": "Inputs",       // Inputs, Data display, Feedback, Navigation, Surfaces, …
+      "path": "Button",           // subpath under src/
+      "description": "...",
+      "muiBase": "MuiButtonProps", // underlying MUI type
+      "props": [                  // custom props added by Enchanted
+        { "name": "variant", "type": "string", "required": false }
+      ],
+      "enums": [                  // exported enums related to this component
+        { "name": "ButtonVariants", "values": { "CONTAINED": "contained", ... } }
+      ],
+      "themeOverridesFn": "getMuiButtonThemeOverrides",
+      "testIds": "ButtonTestIds"  // data-testid enum (if any)
+    }
+  },
+  "theme": {                     // theme system reference
+    "createFunction": "createEnchantedTheme",
+    "directions": ["LTR", "RTL"],
+    "modes": ["LIGHT_NEUTRAL_GREY", "LIGHT_COOL_GREY"],
+    "typography": { ... },       // full typography scale
+    "paletteCategories": [ ... ],
+    "customPaletteExtensions": {
+      "background": [ ... ],
+      "text": [ ... ],
+      "border": [ ... ],
+      "action": [ ... ]
+    }
+  },
+  "icons": [                     // 1,910 icons from @hcl-software/enchanted-icons
+    {
+      "name": "IconArrowRight",
+      "importPath": "@hcl-software/enchanted-icons/dist/carbon/es/arrow--right",
+      "category": "Carbon"       // "Carbon" (IBM) or "Custom" (HCL)
+    }
+  ]
+}
+```
+
+### What's inside
+
+| Section | Count | Description |
+|---------|-------|-------------|
+| `components` | 57 | Every exported component with props, enums, MUI base type, category |
+| `theme` | 1 | Theme factory, palette extensions, typography scale, direction/mode options |
+| `icons` | 1,910 | Icon name, npm import path, category (Carbon vs Custom) |
+
+### How it's generated
+
+The `extract-metadata.ts` script scans the parent project at build time:
+
+1. Reads `src/index.ts` for all exported component names
+2. Parses each component's `.tsx` file for `interface` props and `enum` values
+3. Reads `.stories.tsx` files for Storybook category metadata
+4. Scans `node_modules/@hcl-software/enchanted-icons/dist/` for icon filenames
+5. Extracts theme configuration from `src/theme/`
+
+It does **not** modify any library files.
+
+### Regenerating
+
+Regenerate after library components change:
 
 ```bash
 cd mcp-server
 npm run build-metadata
 ```
 
-The extraction script reads from the parent project's `src/` directory and `node_modules/@hcl-software/enchanted-icons` — it does **not** modify any library files.
+The committed `metadata.json` is always up to date for the current library version — you typically don't need to regenerate it.
 
 ---
 
@@ -304,9 +372,10 @@ mcp-server/
 ├── index.ts              # MCP server entry — registers all tools and prompts
 ├── types.ts              # Shared TypeScript interfaces and metadata loader
 ├── extract-metadata.ts   # Build-time script: generates metadata.json
-├── metadata.json         # Pre-built component + icon index (committed)
+├── metadata.json         # Pre-built component + icon index (committed, ~12K lines)
 ├── package.json          # Self-contained dependencies
 ├── tsconfig.json         # TypeScript config
+├── .eslintrc.json        # ESLint overrides (isolates from parent project rules)
 ├── README.md             # This file
 └── tools/
     ├── list-components.ts

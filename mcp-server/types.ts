@@ -75,7 +75,7 @@ export function loadMetadata(): Metadata {
   return _metadata!;
 }
 
-// ─── Parent project root ────────────────────────────────────────────────────
+// ─── Parent project paths ───────────────────────────────────────────────────
 
-export const PROJECT_ROOT = path.resolve(__dirname, '..');
+const PROJECT_ROOT = path.resolve(__dirname, '..');
 export const SRC_DIR = path.join(PROJECT_ROOT, 'src');
